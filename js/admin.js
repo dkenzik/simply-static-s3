@@ -34,7 +34,19 @@ jQuery( document ).ready( function() {
         jQuery( '.' + selected + '.delivery-method' ).addClass( 'active ');
     });
 
+    // display cloudfront ID option:
+    jQuery( '#awsInvalidateCloudfront' ).change(function() {
+        var selected = jQuery( this ).is(':checked');
+        if (selected) {
+            jQuery( '.cf.delivery-method' ).addClass( 'active ');
+        } else {
+            jQuery( '.cf.delivery-method' ).removeClass( 'active' );
+        }
+    });
+
     // pretend the user selected a value
     jQuery(' #deliveryMethod' ).change();
+
+    jQuery( '#awsInvalidateCloudfront' ).change();
 
 });

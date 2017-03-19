@@ -87,6 +87,15 @@
 						</tr>
 						<tr class='delivery-method s3'>
 							<th>
+								<label for='aws_region'><?php _e( "AWS Region", $this->slug );?></label>
+							</th>
+							<td>
+								<input aria-describedby='awsRegionHelpBlock' type='text' id='awsRegion' name='aws_region' value='<?php echo esc_attr( $this->aws_region ) ?>' placeholder='Region for S3 bucket' class='widefat' />
+								<p id='awsS3RegionHelpBlock' class='help-block'><?php _e( "Enter the correct region for your bucket", $this->slug ); ?></p>
+							</td>
+						</tr>
+						<tr class='delivery-method s3'>
+							<th>
 								<label for='aws_s3_bucket'><?php _e( "AWS S3 Bucket", $this->slug );?></label>
 							</th>
 							<td>
@@ -110,6 +119,25 @@
 							<td>
 								<input aria-describedby='awsSecretAccessKeyHelpBlock' type='text' id='awsSecretS3AccessKey' name='aws_secret_access_key' value='<?php echo esc_attr( $this->aws_secret_access_key ) ?>' placeholder='Secret Access Key with write access to S3' class='widefat' />
 								<p id='awsS3SecretAccessKeyHelpBlock' class='help-block'><?php _e( "If you don't have an access key, use AWS Console IAM to generate a new user and access key. It must have rights to publish to S3.", $this->slug ); ?></p>
+							</td>
+						</tr>
+
+						<tr class='delivery-method s3'>
+							<th>
+								<label for='aws_invalidate_cloudfront'><?php _e( "Invalidate CloudFront", $this->slug );?></label>
+							</th>
+							<td>
+								<input aria-describedby='awsInvalidateCloudfrontHelpBlock' name='aws_invalidate_cloudfront' id='awsInvalidateCloudfront' value='1' type='checkbox' <?php if ( $this->aws_invalidate_cloudfront == '1' ) { echo 'checked'; } ?> />
+								<p id='awsS3InvalidateCloudfrontHelpBlock' class='help-block'><?php _e( "Invalidate AWS Cloudfront after succesfull push to S3 to ensure fastest possible delivery of updated content. Please note that this may cause additional expenses due to increased traffic.", $this->slug ); ?></p>
+							</td>
+						</tr>
+						<tr class='delivery-method cf'>
+							<th>
+								<label for='aws_cloudfront_id'><?php _e( "AWS Cloudfront ID", $this->slug );?></label>
+							</th>
+							<td>
+								<input aria-describedby='awsCloudfrontIdHelpBlock' type='text' id='awsCloudfrontId' name='aws_cloudfront_id' value='<?php echo esc_attr( $this->aws_cloudfront_id ) ?>' placeholder='Cloudfront ID' class='widefat' />
+								<p id='awsS3CloudfrontIdHelpBlock' class='help-block'><?php _e( "Enter Cloudfront ID to invalidate.", $this->slug ); ?></p>
 							</td>
 						</tr>
 						<tr>

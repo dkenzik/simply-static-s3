@@ -1,5 +1,8 @@
 <?php if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
+use Aws\S3\S3Client;
+use Aws\CloudFront\CloudFrontClient;
+
 /**
  * Simply Static URL fetcher class
  *
@@ -262,6 +265,79 @@ class Simply_Static_Archive_Creator {
 		}
 		return true;
 	}
+
+public function publish_to_s3( $aws_region, $bucket, $aws_access_key_id, $aws_secret_access_key ) {
+	// Instantiate the S3 client using your credential profile
+	$s3Client = S3Client::factory(array(
+		'credentials' => array(
+        	'key'    => $aws_access_key_id,
+        	'secret' => $aws_secret_access_key,
+    	),
+		'version' => "latest",
+		'region' => $aws_region,
+	));
+
+	try {
+		// Upload a directory to S3
+		// $pathToFile should be absolute path to a file on disk
+		$result = $s3Client->uploadDirectory($this->archive_dir, $bucket);
+	} catch (any $err) {
+		return new WP_Error( 'cannot_publish_to_s3', sprintf( __( "Could not publish file to S3: %s: %s", $this->slug, $err ), $path ) );
+	}
+  
+	$iterator = $s3Client->getIterator('ListObjects', array(
+    		'Bucket' => $bucket
+	));
+
+	foreach ($iterator as $object) {
+		$path = $this->archive_dir.$object['Key'];
+		if (!file_exists($path)) {
+			$result = $s3Client->deleteObject(array(
+    				'Bucket' => $bucket,
+    				'Key' => $object['Key'],
+			));
+  			}
+  		}
+
+	return true;
+}
+
+/**
+ * Invalidate AWS Cloudfront distribution
+ *
+ * @return boolean|WP_Error
+ */
+public function invalidate_cloudfront( $aws_region, $cloudfront_id, $aws_access_key_id, $aws_secret_access_key ) {
+	// Instantiate the S3 client using your credential profile
+	$cfClient = CloudFrontClient::factory(array(
+		'credentials' => array(
+        	'key'    => $aws_access_key_id,
+        	'secret' => $aws_secret_access_key,
+    	),
+		'version' => '2016-01-28',
+		'region' => $aws_region,
+	));
+
+	$reference = $cloudfront_id." ".time();
+
+	try {
+		$result = $cfClient->createInvalidation([
+    		'DistributionId' => $cloudfront_id,
+    		'InvalidationBatch' => [
+        	'CallerReference' => $reference,
+        	'Paths' => [
+            'Items' => ['/*',],
+            'Quantity' => 1,
+        	],
+    		],
+		]);
+	} catch (any $err) {
+		return new WP_Error( 'cannot_invalidate_cloudfront', sprintf( __( "Could not Invalidate Cloudfront Distribution: %s: %s", $this->slug, $err ), $path ) );
+	}
+		return true;
+	}
+
+
 
 	/**
 	* Copy static files to a local directory

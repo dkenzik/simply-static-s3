@@ -123,6 +123,7 @@ class Simply_Static {
 				->set( 'delivery_method', 's3' )
 				->set( 'local_dir', '' )
 				->set( 'delete_temp_files', '1' )
+				->set( 'aws_invalidate_cloudfront', '0' )
 				->save();
 		}
 	}
@@ -134,7 +135,7 @@ class Simply_Static {
 	 */
 	private function includes() {
 		require plugin_dir_path( dirname( __FILE__ ) ) . 'includes/libraries/phpuri.php';
-		require plugin_dir_path( dirname( __FILE__ ) ) . 'includes/libraries/S3.php';
+		require plugin_dir_path( dirname( __FILE__ ) ) . 'includes/libraries/aws.phar';
 		require plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-simply-static-options.php';
 		require plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-simply-static-view.php';
 		require plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-simply-static-url-extractor.php';
@@ -251,6 +252,7 @@ class Simply_Static {
 			} elseif ( $this->options->get( 'delivery_method' ) == 's3' ) {
 				$bucket = $this->options->get( 'aws_s3_bucket' );
 				$result = $archive_creator->publish_to_s3(
+					$this->options->get( 'aws_region' ),
 					$bucket,
 					$this->options->get( 'aws_access_key_id' ),
 					$this->options->get( 'aws_secret_access_key' )
@@ -259,8 +261,21 @@ class Simply_Static {
 					$error = $result->get_error_message();
 					$this->view->add_flash( 'error', $error );
 				} else {
-					$message = __( 'Site published to S3 bucket: ' . $bucket, self::SLUG );
-					$this->view->add_flash( 'updated', $message );
+					if ($this->options->get( 'aws_invalidate_cloudfront' )) {
+	 					$result = $archive_creator->invalidate_cloudfront(
+	 						$this->options->get( 'aws_region' ),
+	 						$this->options->get( 'aws_cloudfront_id' ),
+	 						$this->options->get( 'aws_access_key_id' ),
+	 						$this->options->get( 'aws_secret_access_key' )
+	 					);
+	 				}
+	 				if ( is_wp_error( $result ) ) {
+	 					$error = $result->get_error_message();
+	 					$this->view->add_flash( 'error', $error );
+	 				} else {
+	 					$message = __( 'Site published to S3 bucket: ' . $bucket, self::SLUG );
+	 					$this->view->add_flash( 'updated', $message );
+	 				}
 				}
 			}
 
@@ -303,9 +318,12 @@ class Simply_Static {
 			->assign( 'delivery_method', $this->options->get( 'delivery_method' ) )
 			->assign( 'local_dir', $this->options->get( 'local_dir' ) )
 			->assign( 'delete_temp_files', $this->options->get( 'delete_temp_files' ) )
+			->assign( 'aws_region', $this->options->get( 'aws_region' ) )
 			->assign( 'aws_s3_bucket', $this->options->get( 'aws_s3_bucket' ) )
 			->assign( 'aws_access_key_id', $this->options->get( 'aws_access_key_id' ) )
 			->assign( 'aws_secret_access_key', $this->options->get( 'aws_secret_access_key' ) )
+			->assign( 'aws_invalidate_cloudfront', $this->options->get( 'aws_invalidate_cloudfront' ) )
+			->assign( 'aws_cloudfront_id', $this->options->get( 'aws_cloudfront_id' ) )
 			->render();
 	}
 
@@ -323,9 +341,12 @@ class Simply_Static {
 			->set( 'delivery_method', filter_input( INPUT_POST, 'delivery_method' ) )
 			->set( 'local_dir', sist_trailingslashit_unless_blank( filter_input( INPUT_POST, 'local_dir' ) ) )
 			->set( 'delete_temp_files', filter_input( INPUT_POST, 'delete_temp_files' ) )
+			->set( 'aws_region', filter_input( INPUT_POST, 'aws_region' ) )
 			->set( 'aws_s3_bucket', filter_input( INPUT_POST, 'aws_s3_bucket' ) )
 			->set( 'aws_access_key_id', filter_input( INPUT_POST, 'aws_access_key_id' ) )
 			->set( 'aws_secret_access_key', filter_input( INPUT_POST, 'aws_secret_access_key' ) )
+			->set( 'aws_invalidate_cloudfront', filter_input( INPUT_POST, 'aws_invalidate_cloudfront' ) )
+			->set( 'aws_cloudfront_id', filter_input( INPUT_POST, 'aws_cloudfront_id' ) )
 			->save();
 	}
 
